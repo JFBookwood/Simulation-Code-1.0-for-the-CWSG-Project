@@ -24,6 +24,7 @@ program CosmicWebSimulation
   ! Simulation variables
   double precision :: time
   integer :: i, j
+  character(len=100) :: filename
 
   ! Initialize particles
   call initialize_particles(position, velocity, mass, density, energy)
@@ -36,7 +37,10 @@ program CosmicWebSimulation
      call update_velocities(velocity, acceleration, dt)
      call compute_density(position, density)
      call compute_energy(velocity, mass, density, energy)
-     call output_to_blender(position, density, energy, time)
+
+     ! Create filename for the current timestep
+     write(filename, '("output_", F5.2, ".csv")') time
+     call output_to_csv(position, density, energy, time, filename)
 
      time = time + dt
   end do
@@ -108,28 +112,34 @@ contains
   end subroutine compute_density
 
   subroutine compute_energy(vel, m, dens, en)
-    double precision, intent(in) :: vel(3, n_particles), m(n_particles), dens(n_particles)
+    double precision, intent(in) :: vel(3, n_particles), m(n_particles)
+    double precision, intent(in) :: dens(n_particles)
     double precision, intent(out) :: en(n_particles)
     integer :: i
 
     do i = 1, n_particles
-       en(i) = 0.5 * m(i) * sum(vel(:, i)**2) + dens(i)
+       en(i) = 0.5 * m(i) * sum(vel(:, i)**2) + G * m(i) * dens(i)
     end do
   end subroutine compute_energy
 
-  subroutine output_to_blender(pos, dens, en, t)
-    double precision, intent(in) :: pos(3, n_particles), dens(n_particles), en(n_particles)
-    double precision, intent(in) :: t
-
-    ! Placeholder for output function to create files for Blender visualization
-    print *, 'Time:', t
-  end subroutine output_to_blender
+  subroutine output_to_csv(pos, dens, en, t, filename)
+    double precision, intent(in) :: pos(3, n_particles), dens(n_particles), en(n_particles), t
+    character(len=100), intent(in) :: filename
+    integer :: i
+    open(unit=10, file=filename, status='replace', action='write')
+    write(10, *) 'x, y, z, density, energy, time'
+    do i = 1, n_particles
+       write(10, '(F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6)') &
+             pos(1, i), pos(2, i), pos(3, i), dens(i), en(i), t
+    end do
+    close(10)
+  end subroutine output_to_csv
 
   function rand_array(n)
     integer, intent(in) :: n
     double precision :: rand_array(n)
     integer :: i
-
+    call random_seed()
     do i = 1, n
        call random_number(rand_array(i))
     end do
