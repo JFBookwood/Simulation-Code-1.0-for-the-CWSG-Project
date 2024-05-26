@@ -14,6 +14,14 @@ contains
         real(8), parameter :: dt = 0.01
         integer :: step
 
+        ! JSON output file
+        integer :: unit_json
+        character(len=100) :: json_filename
+
+        ! Open JSON output file
+        json_filename = 'simulation_results.json'
+        open(unit=unit_json, file=json_filename, status='replace')
+
         ! Initial Conditions
         time = 0.0
         density = 1.0
@@ -43,9 +51,13 @@ contains
                 create_voids(expansion)
             end if
 
-            ! Print step information for debugging
-            print *, 'Step:', step, 'Time:', time, 'Density:', density, 'Energy:', energy, 'Expansion:', expansion, 'Gravitation:', gravitation
+            ! Write simulation data to JSON file
+            write(unit_json, '(A, 5(F10.5, 1X))') '{ "time": ', time, ', "density": ', density, ', "energy": ', energy, ', "expansion": ', expansion, ', "gravitation": ', gravitation, ' }'
         end do
+
+        ! Close JSON output file
+        close(unit_json)
+
     end subroutine run_simulation
 
     ! Subroutines for cosmological models
