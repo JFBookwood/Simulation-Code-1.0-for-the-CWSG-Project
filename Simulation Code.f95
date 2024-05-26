@@ -1,148 +1,89 @@
-program CosmicWebSimulation
-  implicit none
-
-  ! Constants
-  double precision, parameter :: G = 6.67430e-11   ! Gravitational constant (m^3 kg^-1 s^-2)
-  double precision, parameter :: H0 = 67.4         ! Hubble constant (km/s/Mpc)
-  double precision, parameter :: Omega_m = 0.315   ! Matter density parameter
-  double precision, parameter :: Omega_lambda = 0.685 ! Dark energy density parameter
-
-  ! Simulation parameters
-  integer, parameter :: n_particles = 1000
-  double precision, parameter :: box_size = 100.0  ! Box size in Mpc
-  double precision, parameter :: dt = 1e-3         ! Time step in Gyr
-  double precision, parameter :: total_time = 13.8 ! Total simulation time in Gyr
-
-  ! Particle properties
-  double precision :: mass(n_particles)
-  double precision :: position(3, n_particles)
-  double precision :: velocity(3, n_particles)
-  double precision :: acceleration(3, n_particles)
-  double precision :: density(n_particles)
-  double precision :: energy(n_particles)
-
-  ! Simulation variables
-  double precision :: time
-  integer :: i, j
-  character(len=100) :: filename
-
-  ! Initialize particles
-  call initialize_particles(position, velocity, mass, density, energy)
-
-  ! Main simulation loop
-  time = 0.0
-  do while (time < total_time)
-     call compute_gravitational_acceleration(position, mass, acceleration)
-     call update_positions(position, velocity, acceleration, dt)
-     call update_velocities(velocity, acceleration, dt)
-     call compute_density(position, density)
-     call compute_energy(velocity, mass, density, energy)
-
-     ! Create filename for the current timestep
-     write(filename, '("output_", F5.2, ".csv")') time
-     call output_to_csv(position, density, energy, time, filename)
-
-     time = time + dt
-  end do
-
+module cosmology_module
+    implicit none
 contains
+    subroutine run_simulation(time, density, energy, expansion, gravitation)
+        implicit none
+        real(8), intent(inout) :: time
+        real(8), intent(inout) :: density
+        real(8), intent(inout) :: energy
+        real(8), intent(inout) :: expansion
+        real(8), intent(inout) :: gravitation
 
-  subroutine initialize_particles(pos, vel, m, dens, en)
-    double precision, intent(out) :: pos(3, n_particles), vel(3, n_particles), m(n_particles)
-    double precision, intent(out) :: dens(n_particles), en(n_particles)
-    integer :: i
+        ! Simulation Parameter
+        integer, parameter :: num_steps = 1000
+        real(8), parameter :: dt = 0.01
+        integer :: step
 
-    do i = 1, n_particles
-       pos(:, i) = box_size * rand_array(3)
-       vel(:, i) = 0.0
-       m(i) = 1.0
-       dens(i) = 0.0
-       en(i) = 0.0
-    end do
-  end subroutine initialize_particles
+        ! Initial Conditions
+        time = 0.0
+        density = 1.0
+        energy = 1.0
+        expansion = 1.0
+        gravitation = 1.0
 
-  subroutine compute_gravitational_acceleration(pos, m, acc)
-    double precision, intent(in) :: pos(3, n_particles), m(n_particles)
-    double precision, intent(out) :: acc(3, n_particles)
-    double precision :: r(3), dist, force
-    integer :: i, j
+        ! Simulation Loop
+        do step = 1, num_steps
+            ! Update time
+            time = time + dt
 
-    acc = 0.0
-    do i = 1, n_particles
-       do j = 1, n_particles
-          if (i /= j) then
-             r = pos(:, j) - pos(:, i)
-             dist = sqrt(sum(r**2))
-             if (dist > 0.0) then
-                force = G * m(i) * m(j) / dist**2
-                acc(:, i) = acc(:, i) + force * r / dist
-             end if
-          end if
-       end do
-    end do
-  end subroutine compute_gravitational_acceleration
+            ! Update equations based on cosmological models
+            ! (To be replaced with actual equations)
 
-  subroutine update_positions(pos, vel, acc, dt)
-    double precision, intent(inout) :: pos(3, n_particles), vel(3, n_particles)
-    double precision, intent(in) :: acc(3, n_particles), dt
-    integer :: i
+            ! Example: Cosmological expansion
+            expansion = expansion * (1.0 + dt * Hubble_parameter(expansion))
 
-    do i = 1, n_particles
-       pos(:, i) = pos(:, i) + vel(:, i) * dt + 0.5 * acc(:, i) * dt**2
-    end do
-  end subroutine update_positions
+            ! Example: Gravitational attraction
+            gravitation = gravitation * (1.0 - dt * gravitational_force(density, expansion))
 
-  subroutine update_velocities(vel, acc, dt)
-    double precision, intent(inout) :: vel(3, n_particles)
-    double precision, intent(in) :: acc(3, n_particles), dt
-    integer :: i
+            ! Example: Matter density distribution
+            density = initial_density_profile(expansion)
 
-    do i = 1, n_particles
-       vel(:, i) = vel(:, i) + acc(:, i) * dt
-    end do
-  end subroutine update_velocities
+            ! Generate voids at specific positions
+            if (step == 500) then
+                create_voids(expansion)
+            end if
 
-  subroutine compute_density(pos, dens)
-    double precision, intent(in) :: pos(3, n_particles)
-    double precision, intent(out) :: dens(n_particles)
-    integer :: i
+            ! Print step information for debugging
+            print *, 'Step:', step, 'Time:', time, 'Density:', density, 'Energy:', energy, 'Expansion:', expansion, 'Gravitation:', gravitation
+        end do
+    end subroutine run_simulation
 
-    ! Placeholder for density computation
-    dens = 1.0
-  end subroutine compute_density
+    ! Subroutines for cosmological models
+    ! (To be implemented)
 
-  subroutine compute_energy(vel, m, dens, en)
-    double precision, intent(in) :: vel(3, n_particles), m(n_particles)
-    double precision, intent(in) :: dens(n_particles)
-    double precision, intent(out) :: en(n_particles)
-    integer :: i
+    ! Calculate Hubble parameter based on expansion rate
+    real(8) function Hubble_parameter(expansion)
+        implicit none
+        real(8), intent(in) :: expansion
 
-    do i = 1, n_particles
-       en(i) = 0.5 * m(i) * sum(vel(:, i)**2) + G * m(i) * dens(i)
-    end do
-  end subroutine compute_energy
+        ! Example: Hubble parameter calculation
+        Hubble_parameter = Hubble_constant * sqrt(energy_density(expansion))
+    end function Hubble_parameter
 
-  subroutine output_to_csv(pos, dens, en, t, filename)
-    double precision, intent(in) :: pos(3, n_particles), dens(n_particles), en(n_particles), t
-    character(len=100), intent(in) :: filename
-    integer :: i
-    open(unit=10, file=filename, status='replace', action='write')
-    write(10, *) 'x, y, z, density, energy, time'
-    do i = 1, n_particles
-       write(10, '(F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6, 1x, F12.6)') &
-             pos(1, i), pos(2, i), pos(3, i), dens(i), en(i), t
-    end do
-    close(10)
-  end subroutine output_to_csv
+    ! Calculate gravitational force based on matter density and expansion rate
+    real(8) function gravitational_force(density, expansion)
+        implicit none
+        real(8), intent(in) :: density, expansion
 
-  function rand_array(n)
-    integer, intent(in) :: n
-    double precision :: rand_array(n)
-    integer :: i
-    call random_seed()
-    do i = 1, n
-       call random_number(rand_array(i))
-    end do
-  end function rand_array
+        ! Example: Gravitational force calculation
+        gravitational_force = gravitational_constant * density / expansion**2
+    end function gravitational_force
 
-end program CosmicWebSimulation
+    ! Initialize matter density profile
+    real(8) function initial_density_profile(expansion)
+        implicit none
+        real(8), intent(in) :: expansion
+
+        ! Example: Initial matter density profile
+        initial_density_profile = initial_density_parameter * (1.0 + 0.1 * sin(expansion))
+    end function initial_density_profile
+
+    ! Create voids in matter density distribution
+    subroutine create_voids(expansion)
+        implicit none
+        real(8), intent(in) :: expansion
+
+        ! Example: Create voids at specific positions
+        ! (To be implemented)
+    end subroutine create_voids
+end module cosmology_module
