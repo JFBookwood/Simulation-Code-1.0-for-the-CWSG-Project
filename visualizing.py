@@ -1,46 +1,48 @@
 import bpy
-import csv
-import os
+import json
 
-csv_folder_path = "/path/to/your/csv/files/"
+# Load simulation results from JSON file
+def load_simulation_results(filepath):
+    with open(filepath, 'r') as file:
+        data = json.load(file)
+    return data
 
-csv_files = sorted([f for f in os.listdir(csv_folder_path) if f.endswith(".csv")])
+# Create a Blender mesh to represent the simulation data
+def create_mesh(data):
+    vertices = [(index, result['density']) for index, result in enumerate(data)]
+    edges = [(index, index + 1) for index in range(len(data) - 1)]
+    
+    mesh = bpy.data.meshes.new(name="SimulationMesh")
+    mesh.from_pydata(vertices, edges, [])
+    mesh.update()
+    
+    return mesh
 
-bpy.ops.object.select_all(action='SELECT')
-bpy.ops.object.delete(use_global=False)
+# Create an empty object to hold the mesh
+def create_object(mesh):
+    obj = bpy.data.objects.new(name="SimulationObject", object_data=mesh)
+    bpy.context.collection.objects.link(obj)
+    return obj
 
-particles = {}
+# Animate the simulation mesh
+def animate_mesh(obj, data):
+    for index, result in enumerate(data):
+        obj.location = (result['time'], result['density'], 0)  # Adjust location based on simulation data
+        obj.keyframe_insert(data_path="location", frame=index + 1)  # Insert keyframe for each data point
 
-for frame_number, csv_file in enumerate(csv_files):
-    full_path = os.path.join(csv_folder_path, csv_file)
-    with open(full_path, mode='r') as file:
-        csv_reader = csv.DictReader(file)
-        for row in csv_reader:
-            x, y, z = float(row["x"]), float(row["y"]), float(row["z"])
-            density, energy, time = float(row["density"]), float(row["energy"]), float(row["time"])
-            particle_id = (x, y, z)
+# Main function to run the visualization
+def main(filepath):
+    # Load simulation results
+    simulation_data = load_simulation_results(filepath)
+    
+    # Create mesh and object
+    mesh = create_mesh(simulation_data)
+    obj = create_object(mesh)
+    
+    # Animate the object
+    animate_mesh(obj, simulation_data)
 
-            if particle_id not in particles:
-                bpy.ops.mesh.primitive_uv_sphere_add(radius=0.05, location=(x, y, z))
-                obj = bpy.context.object
-                obj.name = f"Particle_{x:.2f}_{y:.2f}_{z:.2f}"
-                particles[particle_id] = obj
-
-                obj["density"] = density
-                obj["energy"] = energy
-                obj["time"] = time
-            else:
-                obj = particles[particle_id]
-
-            obj.location = (x, y, z)
-            obj.keyframe_insert(data_path="location", frame=frame_number)
-
-            obj["density"] = density
-            obj.keyframe_insert(data_path='["density"]', frame=frame_number)
-
-            obj["energy"] = energy
-            obj.keyframe_insert(data_path='["energy"]', frame=frame_number)
-
-bpy.context.scene.frame_end = len(csv_files)
-
-print("Import and animation setup completed.")
+# Call the main function with the path to the JSON file
+if __name__ == "__main__":
+    filepath = "/path/to/simulation_results.json"
+    main(filepath)
