@@ -1,18 +1,37 @@
-// Importing the Fortran modules
-import cosmology_module
 import Foundation
 
-// Declaring variables to store the simulation results
-var time: Double = 0.0
-var density: Double = 1.0
-var energy: Double = 1.0
-var expansion: Double = 1.0
-var gravitation: Double = 1.0
+// Define a structure to represent the data
+struct SimulationResult: Codable {
+    let time: Double
+    let density: Double
+    let energy: Double
+    let expansion: Double
+    let gravitation: Double
+}
 
-// Calling the Fortran subroutine to run the simulation
-run_simulation(&time, &density, &energy, &expansion, &gravitation)
+// Read the JSON file and decode it into an array of SimulationResult objects
+func loadSimulationResults(from file: URL) -> [SimulationResult]? {
+    do {
+        let data = try Data(contentsOf: file)
+        let decoder = JSONDecoder()
+        let results = try decoder.decode([SimulationResult].self, from: data)
+        return results
+    } catch {
+        print("Error loading simulation results:", error)
+        return nil
+    }
+}
 
-// Writing results to a CSV file
-let data = "\(time),\(density),\(energy),\(expansion),\(gravitation)\n"
-let fileURL = URL(fileURLWithPath: "simulation_results.csv")
-try! data.write(to: fileURL, atomically: true, encoding: .utf8)
+// Use the function to load the simulation results
+if let fileURL = Bundle.main.url(forResource: "simulation_results", withExtension: "json") {
+    if let simulationResults = loadSimulationResults(from: fileURL) {
+        // Successfully loaded simulation results
+        for result in simulationResults {
+            print("Time: \(result.time), Density: \(result.density), Energy: \(result.energy), Expansion: \(result.expansion), Gravitation: \(result.gravitation)")
+        }
+    } else {
+        print("Failed to load simulation results.")
+    }
+} else {
+    print("Simulation results JSON file not found.")
+}
