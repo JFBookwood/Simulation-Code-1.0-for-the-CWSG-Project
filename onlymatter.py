@@ -12,33 +12,11 @@ NUM_PARTICLES = 100000  # Number of particles (representing matter density)
 G = 6.67430e-11  # Gravitational constant in m^3 kg^-1 s^-2
 TIME_STEPS = 100  # Number of time steps for simulation
 
-print("Step 2: Initializing Voids and Superclusters data")
-
-VOIDS = [
-    {"name": "Boötes Void", "diameter": 250, "distance": 700, "coords": (14.83, 46.00)},
-    {"name": "Eridanus Void", "diameter": 300, "distance": 1200, "coords": (4.50, -30.00)},
-    {"name": "Canes Venatici Void", "diameter": 60, "distance": 200, "coords": (13.00, 45.00)},
-    {"name": "Scorpius-Centaurus Void", "diameter": 900, "distance": 900, "coords": (16.00, -40.00)},
-    {"name": "Aquarius Void", "diameter": 300, "distance": 1700, "coords": (22.00, -15.00)},
-    {"name": "Sagittarius Void", "diameter": 500, "distance": 1600, "coords": (19.50, -25.00)},
-    {"name": "Fornax Void", "diameter": 200, "distance": 1400, "coords": (3.00, -37.00)},
-    {"name": "Pisces-Cetus Supercluster Complex", "diameter": 1300, "distance": 1000, "coords": (1.00, 0.00)},
-]
-
-SUPERCLUSTERS = [
-    {"name": "Virgo Supercluster", "diameter": 33, "distance": 16.5, "coords": (12.00, 12.00)},
-    {"name": "Perseus-Pisces Supercluster", "diameter": 180, "distance": 70, "coords": (2.00, 25.00)},
-    {"name": "Laniakea Supercluster", "diameter": 160, "distance": 250, "coords": (6.00, -30.00)},
-    {"name": "Shapley Supercluster", "diameter": 370, "distance": 650, "coords": (13.00, -30.00)},
-    {"name": "Horologium-Reticulum Supercluster", "diameter": 250, "distance": 800, "coords": (3.00, -58.00)},
-    {"name": "Leo Supercluster", "diameter": 100, "distance": 290, "coords": (10.00, 15.00)},
-]
-
-print("Step 3: Initializing matter density array")
+print("Step 2: Initializing matter density array")
 
 matter_density = np.zeros((SIZE, SIZE, SIZE))
 
-print("Step 4: Initializing vectors for gravity calculation")
+print("Step 3: Initializing vectors for gravity calculation")
 
 VECTORS = [
     (1, 0, 0), (-1, 0, 0),
@@ -50,7 +28,7 @@ VECTORS = [
     (1, -1, -1), (-1, -1, -1)
 ]
 
-print("Step 5: Generating random particles")
+print("Step 4: Generating random particles")
 
 def generate_particles(num_particles):
     particles = []
@@ -61,7 +39,7 @@ def generate_particles(num_particles):
         particles.append((x, y, z))
     return particles
 
-print("Step 6: Calculating gravitational force")
+print("Step 5: Calculating gravitational force")
 
 def calculate_gravity(m1, m2, r):
     if r == 0:
@@ -69,7 +47,7 @@ def calculate_gravity(m1, m2, r):
     force = G * m1 * m2 / r**2
     return force
 
-print("Step 7: Applying gravitational forces to matter density")
+print("Step 6: Applying gravitational forces to matter density")
 
 def apply_gravity(matter_density):
     new_density = np.zeros_like(matter_density)
@@ -84,56 +62,29 @@ def apply_gravity(matter_density):
                 new_density[x][y][z] = total_force
     return new_density
 
-print("Step 8: Generating initial matter density")
+print("Step 7: Generating initial matter density")
 
 particles = generate_particles(NUM_PARTICLES)
 
 for x, y, z in particles:
     matter_density[x][y][z] += 1
 
-print("Step 9: Simulation loop")
+print("Step 8: Simulation loop")
 
 for t in range(TIME_STEPS):
     matter_density = apply_gravity(matter_density)
+    print(f"Step {t+1} of {TIME_STEPS}: Simulation progress...")
 
-    print(f"Step 10.{t+1}: Calculating expansion rate for Voids")
-    for void in VOIDS:
-        expansion_rate = 1 + t * 0.01
-        x, y = void["coords"]
-        distance_from_milky_way = void["distance"] * expansion_rate
-        void["expansion_rate"] = expansion_rate
-        void["distance_from_milky_way"] = distance_from_milky_way
-
-    print(f"Step 11.{t+1}: Calculating expansion rate for Superclusters")
-    for supercluster in SUPERCLUSTERS:
-        expansion_rate = 1 + t * 0.01
-        x, y = supercluster["coords"]
-        distance_from_milky_way = supercluster["distance"] * expansion_rate
-        supercluster["expansion_rate"] = expansion_rate
-        supercluster["distance_from_milky_way"] = distance_from_milky_way
-
-print("Step 12: Converting data to DataFrames")
-
-voids_df = pd.DataFrame(VOIDS)
-superclusters_df = pd.DataFrame(SUPERCLUSTERS)
-
-print("Step 13: Exporting data to CSV")
-
-voids_df.to_csv('voids_data.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
-superclusters_df.to_csv('superclusters_data.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
+print("Step 9: Exporting data to CSV")
 
 matter_particles = pd.DataFrame(particles, columns=["x", "y", "z"])
+matter_particles.to_csv('simulation_only_matter.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
 
-matter_particles.to_csv('matter_particles.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
+print("Step 10: Printing first 10 rows of Matter Particles DataFrame")
 
-print("Step 14: Printing first 10 rows of Voids and Superclusters DataFrames")
+print(matter_particles.head(10))
 
-print("Voids Data:")
-print(voids_df.head(10))
-print("\nSuperclusters Data:")
-print(superclusters_df.head(10))
-
-print("Step 15: Visualizing matter density distribution")
+print("Step 11: Visualizing matter density distribution")
 
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection='3d')
